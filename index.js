@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server,{
     cors:{
-        origin: "http://localhost:3000"
+        origin: ["http://localhost:3000", "https://hp-toc-toe.vercel.app"]
     }
 });
 
@@ -115,27 +115,6 @@ io.on('connection', (socket) => {
             
         }
     });
-
-
-    // socket.on('reconnect', () => {
-    //     console.log('A user reconnected');
-    //     for (const roomName in rooms) {
-    //         const room = rooms[roomName];
-    
-    //         // Check if the player was previously in this room
-    //         const player = room.players.find(player => player.id === socket.id);
-    //         if (player) {
-    //             // Player is already part of the room
-    //             return;
-    //         }
-    
-    //         // Allow the player back into the room
-    //         room.players.push({ id: socket.id });
-            
-    //         // Maintain the currentPlayer on reconnection
-    //         io.to(roomName).emit('updateGame', room);
-    //     }
-    // });
 });
 
 const PORT = 5000;
