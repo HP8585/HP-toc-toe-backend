@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; }
+        .cell { width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; background: #f0f0f0; font-size: 24px; cursor: pointer; }
+        .cell:hover { background: #ddd; }
+        .status { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Your symbol: <span id="symbol"></span></h1>
+    <div class="status" id="status">Waiting for players...</div>
+    <div class="board" id="board"></div>
+    <input type="text" id="playerName" placeholder="Enter your name" />
+    <input type="text" id="roomName" placeholder="Enter room name" />
+    <button id="joinGame">Join Game</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+        const playerNameInput = document.getElementById('playerName');
+        const roomNameInput = document.getElementById('roomName');
+        const joinGameButton = document.getElementById('joinGame');
+
+        let roomName = '';
+        let playerName = '';
+        let board = Array(9).fill(null);
+
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.addEventListener('click', () => handleCellClick(i));
+            boardElement.appendChild(cell);
+        }
+
+        joinGameButton.addEventListener('click', () => {
+            playerName = playerNameInput.value;
+            roomName = roomNameInput.value;
+
+            if (playerName && roomName) {
+                socket.emit('createGame', roomName, playerName);
+            }
+        });
+
+        function handleCellClick(index) {
+            socket.emit('makeMove', roomName, index);
+        }
+
+        socket.on('updateGame', (data) => {
+            document.getElementById('symbol').innerText = data.players.find(player => player.id === socket.id).symbol;
+            board = data.board;
+            const currentPlayer = data.currentPlayer === socket.id ? playerName : data.players.find(player => player.id === data.currentPlayer).name;
+
+            let winner = null;
+
+            let gameStateText = `Current turn: ${currentPlayer}`;
+            if (board.every(cell => cell)) {//this means all the cells are filled
+                gameStateText = "It's a draw!";
+            } else {
+                
+                const winningCombinations = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // horizontal
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // vertical
+                    [0, 4, 8], [2, 4, 6]            // diagonal
+                ];
+
+                winningCombinations.forEach(combination => {
+                    const [a, b, c] = combination;
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        winner = board[a];
+                    }
+                });
+
+                if (winner) {
+                    gameStateText = `${winner} wins!`;
+                }
+            }
+
+            statusElement.innerText = gameStateText;
+
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.innerText = board[index];
+                cell.style.pointerEvents = (board[index] || winner) ? 'none' : 'auto'; // Prevent moves if the cell is filled or if there's a winner
+            });
+        });
+
+        socket.on("notEnoughPlayers", () =>{
+            alert("Not enough players")
+        })
+    </script>
+</body>
+</html>
