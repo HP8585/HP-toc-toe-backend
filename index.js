@@ -138,9 +138,7 @@ io.on('connection', (socket) => {
     // });
 });
 
-app.get('/', (req, res)=>{
-    return res.sendFile(__dirname + '/index.html')
-})
+
 server.listen(4000, () => {
-    console.log('Server is running on http://localhost:4000');
+    console.log('Server is running on port: 4000');
 });
